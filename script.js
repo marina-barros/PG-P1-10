@@ -3,8 +3,8 @@ var ctx = canvas.getContext('2d');
 
 var points = [];
 var pointsCurve = [];
-var firstDerivVectors = []; //armazena as primeiras derivadas dos pontos inseridos
-var scdDerivVectors = []; //armazena  as segundas derivadas dos pontos inseridos
+var deltaB = []; //armazena as primeiras derivadas dos pontos inseridos
+var scdDeltaB = []; //armazena  as segundas derivadas dos pontos inseridos
 var normalVectors;
 var index = -1;
 var iteracoes = 100; //input do user
@@ -68,7 +68,7 @@ canvas.addEventListener('mousedown', e => {
     drawCircles();
     drawLines();
     createCurve(iteracoes);
-    updateDerivatives();
+    updateDeltas();
     normal();
   }
 });
@@ -90,8 +90,8 @@ function normal() {
   if(grau > 1) {
     var w = {x:0, y:0};
     for(var i = 0; i < grau-2; i++) {
-      u = firstDerivVectors[i];
-      v = scdDerivVectors[i];
+      u = deltaB[i];
+      v = scdDeltaB[i];
       w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
       w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
       normalVectors.push(w);
@@ -104,13 +104,13 @@ function dotProduct(a,b) {
   return a.x*b.x + a.y*b.y;
 }
 
-function updateDerivatives() {
+function updateDeltas() {
   var indexDer = grau-1;
   if(grau >= 2) {
-    firstDerivVectors[indexDer] = firstD(indexDer);
-    scdDerivVectors[indexDer-1] = secondD(indexDer-1);
+    deltaB[indexDer] = firstD(indexDer);
+    scdDeltaB[indexDer-1] = secondD(indexDer-1);
   } else if(grau == 1) {
-    firstDerivVectors[indexDer] = firstD(indexDer);
+    deltaB[indexDer] = firstD(indexDer);
   }
 }
 
@@ -146,19 +146,19 @@ function createCurve(iteracoes) {
     pointsCurve = [];
     var incremento = 1/iteracoes;
     for(var i = 0; i <= 1; i = i + incremento) {
-      pointsCurve.push(pointCurve(i));
+      pointsCurve.push(decasteljau(i, grau, points));
     }
     drawCurve();
   }
 }
 
-function pointCurve(t) {
+function decasteljau(t, max, array) {
   var coef = 0;
   var finalPoint = {x:0, y:0, v:{x:0, y:0}};
-  for (var j = 0; j <= grau; j++) {
-      coef = bernstein(t,j);
-      finalPoint.x = finalPoint.x + points[j].x * coef;
-      finalPoint.y = finalPoint.y + points[j].y * coef;
+  for(var i = 0; i <= max; i++) {
+    coef = bernstein(t, i);
+    finalPoint.x = finalPoint.x + array[i].x * coef;
+    finalPoint.y = finalPoint.y + array[i].y * coef; 
   }
   return finalPoint;
 }
