@@ -7,7 +7,7 @@ function resizeCanvas() {
 }
 
 function drawCircles() {
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.fillStyle = 'rgb(255, 255, 255';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   for (var i in points) {
     ctx.beginPath();
@@ -48,7 +48,10 @@ function getIndex(click) {
 }
 
 var points = [];
+var pointsCurve = [];
 var index = -1;
+var iteracoes = 10; //input do user
+//var t;
 
 resizeCanvas();
 
@@ -59,12 +62,62 @@ canvas.addEventListener('mousedown', e => {
     points.push(click);
     drawCircles();
     drawLines();
+    createCurve(iteracoes);
   }
 });
 
 canvas.addEventListener('mouseup', e => {
 
 });
+
+function incremento(iteracoes) {
+  return 1 / iteracoes;
+}
+
+function drawCurve() {
+  for(var j = 1; j < pointsCurve.length; j++) {
+    ctx.beginPath();
+    ctx.moveTo(pointsCurve[j-1].x, pointsCurve[j-1].y);
+    ctx.lineTo(pointsCurve[j].x, pointsCurve[j].y);
+    ctx.stroke();
+  }  
+}
+
+function createCurve(iteracoes) {
+  if(points.length > 2) {
+    pointsCurve = [];
+    var incremento = 1/iteracoes;
+    for(var i = 0; i <= 1; i = i + incremento) {
+      pointsCurve.push(pointCurve(i));
+    }
+    drawCurve();
+  }
+}
+
+function pointCurve(t) {
+  var tam = points.length-1;
+  var coef = 0;
+  var finalPoint = {x:0, y:0, v:{x:0, y:0}};
+  for (var j = 0; j <= tam; j++) {
+      coef = comb(tam,j)*Math.pow(1-t, tam-j)*Math.pow(t, j);
+      finalPoint.x = finalPoint.x + points[j].x * coef;
+      finalPoint.y = finalPoint.y + points[j].y * coef;
+  }
+  return finalPoint;
+}
+
+function comb(a, b) {
+  return fact(a)/(fact(b)*fact(a-b));
+}
+
+function fact(a) {
+  var result = 1;
+  for(var i = 1; i<=a; i++) {
+    result = result * i;
+  }
+  return result;
+}
+
 
 // canvas.addEventListener('dblclick', e => {
 //   if (index !== -1) {
@@ -76,19 +129,20 @@ canvas.addEventListener('mouseup', e => {
 //   }
 // });
 
-setInterval(() => {
-  for (var i in points) {
-    var p = points[i];
-    var pos = {x: p.x + p.v.x, y: p.y + p.v.y};
-    if (pos.x < 0 || pos.x > canvas.width) {
-      points[i].v.x *= -1;
-    }
-    if (pos.y < 0 || pos.y > canvas.height) {
-      points[i].v.y *= -1;
-    }
-    points[i].x += points[i].v.x;
-    points[i].y += points[i].v.y;
-  }
-  drawCircles();
-  drawLines();
-}, 1000 / 30);
+// setInterval(() => {
+//   for (var i in points) {
+//     var p = points[i];
+//     var pos = {x: p.x + p.v.x, y: p.y + p.v.y};
+//     if (pos.x < 0 || pos.x > canvas.width) {
+//       points[i].v.x *= -1;
+//     }
+//     if (pos.y < 0 || pos.y > canvas.height) {
+//       points[i].v.y *= -1;
+//     }
+//     points[i].x += points[i].v.x;
+//     points[i].y += points[i].v.y;
+//   }
+//   drawCircles();
+//   drawLines();
+//   createCurve();
+// }, 1000 / 30);
