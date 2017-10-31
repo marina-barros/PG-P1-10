@@ -1,6 +1,16 @@
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 
+var points = [];
+var pointsCurve = [];
+var firstDerivVectors = []; //armazena as primeiras derivadas dos pontos inseridos
+var scdDerivVectors = []; //armazena  as segundas derivadas dos pontos inseridos
+var normalVectors;
+var index = -1;
+var iteracoes = 100; //input do user
+var grau;
+//var t;
+
 function resizeCanvas() {
   canvas.width = parseFloat(window.getComputedStyle(canvas).width);
   canvas.height = parseFloat(window.getComputedStyle(canvas).height);
@@ -47,12 +57,6 @@ function getIndex(click) {
   return -1;
 }
 
-var points = [];
-var pointsCurve = [];
-var index = -1;
-var iteracoes = 10; //input do user
-//var t;
-
 resizeCanvas();
 
 canvas.addEventListener('mousedown', e => {
@@ -60,15 +64,69 @@ canvas.addEventListener('mousedown', e => {
   index = getIndex(click);
   if (index === -1) {
     points.push(click);
+    updateGrau();
     drawCircles();
     drawLines();
     createCurve(iteracoes);
+    updateDerivatives();
+    normal();
   }
 });
 
 canvas.addEventListener('mouseup', e => {
 
 });
+
+function drawNormalVectors() {
+  for(var j = 0; j < pointsCurve.length; j++) {
+    ctx.beginPath();
+    ctx.moveTo(pointsCurve[j].x, pointsCurve[j].y);
+    ctx.lineTo(normalVectors[j].x, normalVectors[j].y);
+    ctx.stroke();
+  }  
+}
+
+function normal() {
+  if(grau > 1) {
+    var w = {x:0, y:0};
+    for(var i = 0; i < grau-2; i++) {
+      u = firstDerivVectors[i];
+      v = scdDerivVectors[i];
+      w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
+      w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
+      normalVectors.push(w);
+      drawNormalVectors();
+    }
+  }
+}
+
+function dotProduct(a,b) {
+  return a.x*b.x + a.y*b.y;
+}
+
+function updateDerivatives() {
+  var indexDer = grau-1;
+  if(grau >= 2) {
+    firstDerivVectors[indexDer] = firstD(indexDer);
+    scdDerivVectors[indexDer-1] = secondD(indexDer-1);
+  } else if(grau == 1) {
+    firstDerivVectors[indexDer] = firstD(indexDer);
+  }
+}
+
+function firstD(z) {
+  var p = {x: 0, y:0, v:{x: 0, y:0}};
+  p.x = points[z+1].x - points[z].x;
+  p.y = points[z+1].y - points[z].y;
+  return p;
+}
+
+function secondD(z) {
+  var q = {x: 0, y:0, v:{x: 0, y:0}};
+  q.x = points[z+2].x -(2 * points[z+1].x) + points[z].x;
+  q.y = points[z+2].y -(2 * points[z+1].y) + points[z].y;
+  return q;
+}
 
 function incremento(iteracoes) {
   return 1 / iteracoes;
@@ -95,15 +153,18 @@ function createCurve(iteracoes) {
 }
 
 function pointCurve(t) {
-  var tam = points.length-1;
   var coef = 0;
   var finalPoint = {x:0, y:0, v:{x:0, y:0}};
-  for (var j = 0; j <= tam; j++) {
-      coef = comb(tam,j)*Math.pow(1-t, tam-j)*Math.pow(t, j);
+  for (var j = 0; j <= grau; j++) {
+      coef = bernstein(t,j);
       finalPoint.x = finalPoint.x + points[j].x * coef;
       finalPoint.y = finalPoint.y + points[j].y * coef;
   }
   return finalPoint;
+}
+
+function bernstein(t,i) {
+  return comb(grau,i)*Math.pow(1-t, grau-i)*Math.pow(t, i);
 }
 
 function comb(a, b) {
@@ -118,7 +179,9 @@ function fact(a) {
   return result;
 }
 
-
+function updateGrau() {
+  grau = points.length-1;
+}
 // canvas.addEventListener('dblclick', e => {
 //   if (index !== -1) {
 //     points.splice(index, 1);
