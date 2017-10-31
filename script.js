@@ -78,25 +78,24 @@ canvas.addEventListener('mouseup', e => {
 });
 
 function drawNormalVectors() {
-  for(var j = 0; j < pointsCurve.length; j++) {
-    ctx.beginPath();
-    ctx.moveTo(pointsCurve[j].x, pointsCurve[j].y);
-    ctx.lineTo(normalVectors[j].x, normalVectors[j].y);
-    ctx.stroke();
+  if (grau > 2) {
+    for(var j = 0; j < normalVectors.length; j++) {
+      ctx.beginPath();
+      ctx.moveTo(pointsCurve[j].x, pointsCurve[j].y);
+      ctx.lineTo(normalVectors[j].x, normalVectors[j].y);
+      ctx.stroke();
+    }
   }  
 }
 
-function normal() {
-  if(grau > 1) {
+function normal(t, i) {
+  if (grau >= 2) {
     var w = {x:0, y:0};
-    for(var i = 0; i < grau-2; i++) {
-      u = deltaB[i];
-      v = scdDeltaB[i];
-      w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
-      w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
-      normalVectors.push(w);
-      drawNormalVectors();
-    }
+    u = grau * decasteljau(t, grau-1, deltaB[i]);
+    v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB[i]);
+    w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
+    w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
+    normalVectors.push(w);
   }
 }
 
@@ -128,10 +127,6 @@ function secondD(z) {
   return q;
 }
 
-function incremento(iteracoes) {
-  return 1 / iteracoes;
-}
-
 function drawCurve() {
   for(var j = 1; j < pointsCurve.length; j++) {
     ctx.beginPath();
@@ -147,8 +142,10 @@ function createCurve(iteracoes) {
     var incremento = 1/iteracoes;
     for(var i = 0; i <= 1; i = i + incremento) {
       pointsCurve.push(decasteljau(i, grau, points));
+      normal(i, pointsCurve.length-1);
     }
     drawCurve();
+    drawNormalVectors();
   }
 }
 
