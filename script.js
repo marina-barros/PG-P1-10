@@ -7,7 +7,7 @@ var deltaB = []; //armazena as primeiras derivadas dos pontos inseridos
 var scdDeltaB = []; //armazena  as segundas derivadas dos pontos inseridos
 var normalVectors;
 var index = -1;
-var iteracoes = 100; //input do user
+var iteracoes = 4; //input do user
 var grau;
 //var t;
 
@@ -67,9 +67,8 @@ canvas.addEventListener('mousedown', e => {
     updateGrau();
     drawCircles();
     drawLines();
-    createCurve(iteracoes);
     updateDeltas();
-    normal();
+    createCurve(iteracoes);
   }
 });
 
@@ -88,18 +87,18 @@ function drawNormalVectors() {
   }  
 }
 
-function normal(t, i) {
+function normal(t) {
   if (grau >= 2) {
     var w = {x:0, y:0};
-    u = grau * decasteljau(t, grau-1, deltaB[i]);
-    v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB[i]);
+    u = grau * decasteljau(t, grau-1, deltaB);
+    v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB);
     w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
     w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
     normalVectors.push(w);
   }
 }
 
-function dotProduct(a,b) {
+function dotProduct(a,b, v) {
   return a.x*b.x + a.y*b.y;
 }
 
@@ -142,7 +141,9 @@ function createCurve(iteracoes) {
     var incremento = 1/iteracoes;
     for(var i = 0; i <= 1; i = i + incremento) {
       pointsCurve.push(decasteljau(i, grau, points));
-      normal(i, pointsCurve.length-1);
+      if(scdDeltaB.length > 0) {
+      	normal(i);
+      }
     }
     drawCurve();
     drawNormalVectors();
@@ -153,15 +154,15 @@ function decasteljau(t, max, array) {
   var coef = 0;
   var finalPoint = {x:0, y:0, v:{x:0, y:0}};
   for(var i = 0; i <= max; i++) {
-    coef = bernstein(t, i);
+    coef = bernstein(t, max, i);
     finalPoint.x = finalPoint.x + array[i].x * coef;
     finalPoint.y = finalPoint.y + array[i].y * coef; 
   }
   return finalPoint;
 }
 
-function bernstein(t,i) {
-  return comb(grau,i)*Math.pow(1-t, grau-i)*Math.pow(t, i);
+function bernstein(t, max, i) {
+  return comb(max,i)*Math.pow(1-t, max-i)*Math.pow(t, i);
 }
 
 function comb(a, b) {
