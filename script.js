@@ -5,9 +5,9 @@ var points = [];
 var pointsCurve = [];
 var deltaB = []; //armazena as primeiras derivadas dos pontos inseridos
 var scdDeltaB = []; //armazena  as segundas derivadas dos pontos inseridos
-var normalVectors;
+var normalVectors = [];
 var index = -1;
-var iteracoes = 4; //input do user
+var iteracoes = 50; //input do user
 var grau;
 //var t;
 
@@ -77,28 +77,37 @@ canvas.addEventListener('mouseup', e => {
 });
 
 function drawNormalVectors() {
-  if (grau > 2) {
+  if (grau >= 2) {
     for(var j = 0; j < normalVectors.length; j++) {
       ctx.beginPath();
       ctx.moveTo(pointsCurve[j].x, pointsCurve[j].y);
-      ctx.lineTo(normalVectors[j].x, normalVectors[j].y);
+      ctx.lineTo(pointsCurve[j].x + normalVectors[j].x, pointsCurve[j].y + normalVectors[j].y);
       ctx.stroke();
     }
-  }  
+  }
 }
 
 function normal(t) {
   if (grau >= 2) {
     var w = {x:0, y:0};
-    u = grau * decasteljau(t, grau-1, deltaB);
-    v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB);
+    var u = {x:0, y:0};
+    var v = {x:0, y:0};
+    u.x = decasteljau(t, grau-1, deltaB).x;
+    u.y = decasteljau(t, grau-1, deltaB).y;
+    // u = grau * decasteljau(t, grau-1, deltaB);
+    v.x = decasteljau(t, grau-2, scdDeltaB).x;
+    v.y = decasteljau(t, grau-2, scdDeltaB).y;
+    // v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB);
     w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
     w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
+    // console.log(u);
+    // console.log(v);
+    // console.log(w);
     normalVectors.push(w);
   }
 }
 
-function dotProduct(a,b, v) {
+function dotProduct(a,b) {
   return a.x*b.x + a.y*b.y;
 }
 
@@ -132,12 +141,13 @@ function drawCurve() {
     ctx.moveTo(pointsCurve[j-1].x, pointsCurve[j-1].y);
     ctx.lineTo(pointsCurve[j].x, pointsCurve[j].y);
     ctx.stroke();
-  }  
+  }
 }
 
 function createCurve(iteracoes) {
   if(points.length > 2) {
     pointsCurve = [];
+    normalVectors = [];
     var incremento = 1/iteracoes;
     for(var i = 0; i <= 1; i = i + incremento) {
       pointsCurve.push(decasteljau(i, grau, points));
@@ -156,7 +166,7 @@ function decasteljau(t, max, array) {
   for(var i = 0; i <= max; i++) {
     coef = bernstein(t, max, i);
     finalPoint.x = finalPoint.x + array[i].x * coef;
-    finalPoint.y = finalPoint.y + array[i].y * coef; 
+    finalPoint.y = finalPoint.y + array[i].y * coef;
   }
   return finalPoint;
 }
