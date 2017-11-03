@@ -10,6 +10,7 @@ var index = -1;
 var prevPointCurve = {x:0, y:0, v:{x:0, y:0}};
 var iteracoes = 15; //input do user
 var grau;
+var movingPoint;
 var incremento = 0;
 
 function resizeCanvas() {
@@ -60,7 +61,7 @@ function getIndex(click) {
 
 resizeCanvas();
 
-canvas.addEventListener('mousedown', e => {
+canvas.addEventListener('click', e => {
   var click = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
   index = getIndex(click);
   if (index === -1) {
@@ -74,11 +75,17 @@ canvas.addEventListener('mousedown', e => {
   }
 });
 
-canvas.addEventListener('dblclick', e => {
+canvas.addEventListener('mousedown', e => {
   var click = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
   index = getIndex(click);
-  if (index === -1) {
-    points.push(click);
+  if (index !== -1) {
+    movingPoint = true;
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (movingPoint) {
+    points[index] = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
     updateGrau();
     drawCircles();
     drawLines();
@@ -89,8 +96,21 @@ canvas.addEventListener('dblclick', e => {
 });
 
 canvas.addEventListener('mouseup', e => {
-
+  movingPoint = false;
 });
+
+canvas.addEventListener('dblclick', e => {
+  if (index !== -1) {
+    points.splice(index, 1);
+    updateGrau();
+    drawCircles();
+    drawLines();
+    updateDeltas();
+    updateIncremento(iteracoes);
+    createCurve();
+  }
+});
+
 
 function drawNormalVectors() {
   if (grau >= 2) {
