@@ -6,6 +6,7 @@ var pointsCurve = [];
 var deltaB = []; //armazena as primeiras derivadas dos pontos inseridos
 var scdDeltaB = []; //armazena  as segundas derivadas dos pontos inseridos
 var normalVectors = [];
+var tangentVectors = [];
 var index = -1;
 var prevPointCurve = {x:0, y:0, v:{x:0, y:0}};
 var iteracoes = 15; //input do user
@@ -65,6 +66,8 @@ canvas.addEventListener('click', e => {
   var click = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
   index = getIndex(click);
   if (index === -1) {
+    normalVectors = [];
+    tangentVectors = [];
     points.push(click);
     updateGrau();
     drawCircles();
@@ -86,6 +89,8 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('mousemove', e => {
   if (movingPoint) {
     points[index] = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
+    normalVectors = [];
+    tangentVectors = [];
     updateGrau();
     drawCircles();
     drawLines();
@@ -111,6 +116,16 @@ canvas.addEventListener('dblclick', e => {
   }
 });
 
+function drawTangentVectors() {
+  if (grau >= 2) {
+    for(var j = 0; j < normalVectors.length; j++) {
+      ctx.beginPath();
+      ctx.moveTo(pointsCurve[j].x, pointsCurve[j].y);
+      ctx.lineTo(pointsCurve[j].x + tangentVectors[j].x, pointsCurve[j].y + tangentVectors[j].y);
+      ctx.stroke();
+    }
+  }
+}
 
 function drawNormalVectors() {
   if (grau >= 2) {
@@ -128,7 +143,8 @@ function normal(t) {
     var w = {x:0, y:0};
     var u = {x:0, y:0};
     var v = {x:0, y:0};
-    u = decasteljau(deltaB, t);    
+    u = decasteljau(deltaB, t);
+    tangentVectors.push(u);    
     //u.x = grau * (decasteljau(points, t, 1, grau-1).x - decasteljau(points, t, 0, grau-1).x);
     //u.y = grau * (decasteljau(points, t, 1, grau-1).y - decasteljau(points, t, 0, grau-1).y);
     // u = grau * decasteljau(t, grau-1, deltaB);
@@ -187,6 +203,7 @@ function updateIncremento(iteracoes) {
 function createCurve() {
   pointsCurve = [];
   normalVectors = [];
+  tangentVectors = [];
   var iter;
   if(points.length > 2) {
     for (var j = 0; j <=iteracoes; j++) {
@@ -197,6 +214,7 @@ function createCurve() {
     }
     drawCurve();
     drawNormalVectors();
+    drawTangentVectors();
   }
 }
 
@@ -215,58 +233,9 @@ function decasteljau(array, t) {
   }
 }
 
-
-/*
-
-function decasteljau(t, max, array) {
-  var coef = 0;
-  var finalPoint = {x:0, y:0, v:{x:0, y:0}};
-  for(var i = 0; i <= max; i++) {
-    coef = bernstein(t, max, i);
-    finalPoint.x = finalPoint.x + array[i].x * coef;
-    finalPoint.y = finalPoint.y + array[i].y * coef;
-  }
-  return finalPoint;
-}*/
-
-function bernstein(t, max, i) {
-  return comb(max,i)*Math.pow(1-t, max-i)*Math.pow(t, i);
-}
-
-function comb(a, b) {
-  return fact(a)/(fact(b)*fact(a-b));
-}
-
-function fact(a) {
-  var result = 1;
-  for(var i = 1; i<=a; i++) {
-    result = result * i;
-  }
-  return result;
-}
-
 function updateGrau() {
   grau = points.length-1;
   if(grau == 1) {
     prevPointCurve = points[0];
   }
 }
-
-
-// setInterval(() => {
-//   for (var i in points) {
-//     var p = points[i];
-//     var pos = {x: p.x + p.v.x, y: p.y + p.v.y};
-//     if (pos.x < 0 || pos.x > canvas.width) {
-//       points[i].v.x *= -1;
-//     }
-//     if (pos.y < 0 || pos.y > canvas.height) {
-//       points[i].v.y *= -1;
-//     }
-//     points[i].x += points[i].v.x;
-//     points[i].y += points[i].v.y;
-//   }
-//   drawCircles();
-//   drawLines();
-//   createCurve();
-// }, 1000 / 30);
