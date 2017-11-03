@@ -7,9 +7,10 @@ var deltaB = []; //armazena as primeiras derivadas dos pontos inseridos
 var scdDeltaB = []; //armazena  as segundas derivadas dos pontos inseridos
 var normalVectors = [];
 var index = -1;
-var iteracoes = 50; //input do user
+var prevPointCurve = {x:0, y:0, v:{x:0, y:0}};
+var iteracoes = 15; //input do user
 var grau;
-//var t;
+var incremento = 0;
 
 function resizeCanvas() {
   canvas.width = parseFloat(window.getComputedStyle(canvas).width);
@@ -68,7 +69,22 @@ canvas.addEventListener('mousedown', e => {
     drawCircles();
     drawLines();
     updateDeltas();
-    createCurve(iteracoes);
+    updateIncremento(iteracoes);
+    createCurve();
+  }
+});
+
+canvas.addEventListener('dblclick', e => {
+  var click = {x: e.offsetX, y: e.offsetY, v:{x: 0, y:0}};
+  index = getIndex(click);
+  if (index === -1) {
+    points.push(click);
+    updateGrau();
+    drawCircles();
+    drawLines();
+    updateDeltas();
+    updateIncremento(iteracoes);
+    createCurve();
   }
 });
 
@@ -92,11 +108,11 @@ function normal(t) {
     var w = {x:0, y:0};
     var u = {x:0, y:0};
     var v = {x:0, y:0};
-    u.x = decasteljau(t, grau-1, deltaB).x;
-    u.y = decasteljau(t, grau-1, deltaB).y;
+    u = decasteljau(deltaB, t);    
+    //u.x = grau * (decasteljau(points, t, 1, grau-1).x - decasteljau(points, t, 0, grau-1).x);
+    //u.y = grau * (decasteljau(points, t, 1, grau-1).y - decasteljau(points, t, 0, grau-1).y);
     // u = grau * decasteljau(t, grau-1, deltaB);
-    v.x = decasteljau(t, grau-2, scdDeltaB).x;
-    v.y = decasteljau(t, grau-2, scdDeltaB).y;
+    v = decasteljau(scdDeltaB, t);
     // v = grau * grau-1 * decasteljau(t, grau-2, scdDeltaB);
     w.x = v.x - (dotProduct(u,v)/dotProduct(u,u))*u.x;
     w.y = v.y - (dotProduct(u,v)/dotProduct(u,u))*u.y;
@@ -136,29 +152,51 @@ function secondD(z) {
 }
 
 function drawCurve() {
-  for(var j = 1; j < pointsCurve.length; j++) {
+  for(var i = 1; i < pointsCurve.length;i++) {
     ctx.beginPath();
-    ctx.moveTo(pointsCurve[j-1].x, pointsCurve[j-1].y);
-    ctx.lineTo(pointsCurve[j].x, pointsCurve[j].y);
+    ctx.moveTo(pointsCurve[i-1].x, pointsCurve[i-1].y);
+    ctx.lineTo(pointsCurve[i].x, pointsCurve[i].y);
     ctx.stroke();
   }
 }
 
-function createCurve(iteracoes) {
+function updateIncremento(iteracoes) {
+  incremento = 1/iteracoes;
+}
+
+function createCurve() {
+  pointsCurve = [];
+  normalVectors = [];
+  var iter;
   if(points.length > 2) {
-    pointsCurve = [];
-    normalVectors = [];
-    var incremento = 1/iteracoes;
-    for(var i = 0; i <= 1; i = i + incremento) {
-      pointsCurve.push(decasteljau(i, grau, points));
-      if(scdDeltaB.length > 0) {
-      	normal(i);
-      }
+    for (var j = 0; j <=iteracoes; j++) {
+      iter = j*(1/iteracoes);
+      var result = decasteljau(points, iter);
+      pointsCurve.push(result);
+      normal(iter);
     }
     drawCurve();
     drawNormalVectors();
   }
 }
+
+function decasteljau(array, t) {
+  if(array.length == 1) {
+    return array[0];
+  } else {
+    var newpoints = [];
+    for(var i = 0; i < array.length-1; i++) {
+      var point = {x:0, y:0, v:{x:0, y:0}};
+      point.x = (1-t) * array[i].x + t * array[i+1].x;
+      point.y = (1-t) * array[i].y + t * array[i+1].y;
+      newpoints.push(point);
+    }
+    return decasteljau(newpoints, t);
+  }
+}
+
+
+/*
 
 function decasteljau(t, max, array) {
   var coef = 0;
@@ -169,7 +207,7 @@ function decasteljau(t, max, array) {
     finalPoint.y = finalPoint.y + array[i].y * coef;
   }
   return finalPoint;
-}
+}*/
 
 function bernstein(t, max, i) {
   return comb(max,i)*Math.pow(1-t, max-i)*Math.pow(t, i);
@@ -189,16 +227,11 @@ function fact(a) {
 
 function updateGrau() {
   grau = points.length-1;
+  if(grau == 1) {
+    prevPointCurve = points[0];
+  }
 }
-// canvas.addEventListener('dblclick', e => {
-//   if (index !== -1) {
-//     points.splice(index, 1);
-//     drawCircles();
-//     if (previous !== {x:0, y:0, v:{x:0, y:0}}) {
-//       drawLine();
-//     }
-//   }
-// });
+
 
 // setInterval(() => {
 //   for (var i in points) {
